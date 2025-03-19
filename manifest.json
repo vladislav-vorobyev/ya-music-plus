@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "version": "1.1.0",
+  "name": "Y.Music plus",
+  "description": "Добавляет на панель управления кнопку поиска позиции в плейлисте и кнопку автопрокрутки.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://music.yandex.ru/*"
+      ],
+      "js": ["jquery-3.2.1.min.js", "ya-music-plus.js"]
+    }
+  ],
+  "commands": {},
+  "permissions": [
+      "scripting",
+      "activeTab",
+      "idle",
+      "notifications",
+      "browsingData",
+      "topSites",
+      "webNavigation",
+      "storage",
+      "webRequest",
+      "privacy",
+      "alarms",
+      "contentSettings"
+  ],
+  "host_permissions": [
+      "https://music.yandex.ru/*"
+  ],
+  "optional_host_permissions": [
+      "*://*/*"
+  ]
+}
