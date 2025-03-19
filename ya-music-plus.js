@@ -3,7 +3,7 @@
 * Добавляет на панель управления кнопку поиска позиции в плейлисте и кнопку автопрокрутки.
 */
 
-const DEFAULT_DEBUG = 1;
+const DEFAULT_DEBUG = 1; // уровень дебага по умолчанию (0 - минимально)
 
 // Функция инициализации расширения, входным параметром должена быть передана jQuery
 function _init($) {
@@ -13,7 +13,7 @@ function _init($) {
 	let gLocate = false; // активирован режим поиска позиции в списке
 	let gDoingFocus = false; // активен процесс фокусировки (флаг для исключения двойного исполнения)
 
-	// Функция для обновления состояния переменной debug (default = DEFAULT_DEBUG)
+	// Функция для обновления состояния переменной debug из DOM модели <html debug="значение">
 	let _popDebug = () => { debug = parseInt($('html').attr('debug') ?? DEFAULT_DEBUG); }
 
 	// Функция для получения id текущего проигрываемого трека
@@ -58,17 +58,19 @@ function _init($) {
 	// иначе поиск происходит в пределах текущего загруженного списка треков
 	function _autoFocus(toId, doScroll) {
 		// Проверяем что активен режим автопрокрутки или режим поиска и ставим флаг процесса фокусировки
-		if (!(gAutoFocus || gLocate)) {
+		// иначе снимаем флаг и завершаем работу
+		if (gAutoFocus || gLocate) {
+			gDoingFocus = true;
+		} else {
 			gDoingFocus = false;
 			return;
-		} else {
-			gDoingFocus = true;
 		}
 
 		let $target = null; // искомый трек в списке
 
 		// Берем список треков и ищем среди них трек с нужным id
-		let $playlistBox = $('.lightlist_tracks');
+		// let $playlistBox = $('.lightlist_tracks');
+		let $playlistBox = $('.centerblock');
 		let $tracks = $playlistBox.find('.d-track');
 		if (debug > 3) console.log('tracks count:', $tracks.length); // debug
 		$tracks.each( function(i) {
