@@ -35,6 +35,9 @@ function _init($) {
 	let _shuffleMode = () => $('.player-controls__btn.player-controls__btn_shuffle.player-controls__btn_on').length? true : false;
 	let _waveMode = () => $('.player-controls__btn.player-controls__btn_shuffle:visible').length? false : true;
 
+	// Функции для прокрутки окна на позицию y
+	let _scrollPlaylistTo = (y) => window.scroll(0, Math.max(0, y - window.screen.height/2 + 60));
+
 	// Создаем массив треков текущего плейлиста и его функции
 	let gTracks = [];
 	gTracks._up = ($track) => { // добавление/обновление трека из DOM объекта
@@ -143,7 +146,7 @@ function _init($) {
 			let track = gTracks._firstById(toId);
 			if (track) {
 				// Трек найден в сохраненном списке => прокрутим страницу до этой позиции
-				window.scrollTo(0, _playlistBox().offset().top + track.top);
+				_scrollPlaylistTo(_playlistBox().offset().top + track.top);
 				// Повторный запуск
 				setTimeout(_autoFocus, 100, toId, doScroll);
 				return;
@@ -155,7 +158,7 @@ function _init($) {
 		if ($target) {
 			gFocusId = toId;
 			if (debug) console.log('(->)', toId, $target.find('a.d-track__title').text()?.trim?.()); // info
-			window.scroll(0, Math.max(0, $target.offset().top - window.screen.height/2 + 40));
+			_scrollPlaylistTo($target.offset().top);
 
 			// Если был активен режим поиска, то выключаем его
 			if (gLocate) $btnL._off();
