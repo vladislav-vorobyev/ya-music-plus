@@ -15,6 +15,7 @@ function _init($) {
 	let gDoingFocus = false; // активен процесс фокусировки (флаг для исключения двойного исполнения)
 	let gShowListId = 0; // id трека для которого был показан список плейлистов
 	let gShowPlaylists = false; // активирован режим загрузки списка плейлистов для текущего трека
+	let gTrackBoxHeight = 0; // высота рамки трека в плейлисте
 
 	// Функция для проверки текущей активности скрипта
 	let _isBusy = () => gDoingFocus || gLocate || gScan;
@@ -31,6 +32,9 @@ function _init($) {
 	// Функция для получения контейнера с треками плейлиста
 	let _playlistBox = () => $('.lightlist__cont'); // $('.centerblock') // $('.lightlist_tracks')
 
+	// Функция для получения длинны плейлиста
+	let _playlistCount = () => gTrackBoxHeight? Math.round(_playlistBox().outerHeight() / gTrackBoxHeight) : false;
+
 	// Функции определения режима работы плеера
 	let _shuffleMode = () => $('.player-controls__btn.player-controls__btn_shuffle.player-controls__btn_on').length? true : false;
 	let _waveMode = () => $('.player-controls__btn.player-controls__btn_shuffle:visible').length? false : true;
@@ -45,16 +49,18 @@ function _init($) {
 		if (id) {
 			let top = $track.position()?.top;
 			if (top >= 0) {
-				let i = Math.round(top / $track.outerHeight());
+				gTrackBoxHeight = $track.outerHeight();
+				let i = Math.round(top / gTrackBoxHeight);
 				if (id != gTracks[i]?.id) {
 					// обновление списка
-					gTracks[i] = {id:id, top:top};
+					gTracks[i] = {id:id, top:top, height:gTrackBoxHeight};
 				}
 			}
 		}
 	}
 	gTracks._byId = (id) => gTracks.filter((v) => v.id == id); // все треки по id
 	gTracks._firstById = (id) => gTracks._byId(id)?.[0]; // первый из треков по id
+	gTracks._count = () => Object.keys(gTracks).length - 4; // кол-во треков
 
 
 	// Добавляем свои стили
@@ -105,6 +111,13 @@ function _init($) {
 		+ '<div class="d-icon" style="margin:8px 0;font-size:20px;">D<small style="font-size:.4em;position:relative;left:-1px;">info</small></div></div>');
 	$controlsBox.prepend($btnD);
 	$btnD.on('click', () => {
+		console.log('_getCurTrackId:', _getCurTrackId());
+		console.log('_shuffleMode:', _shuffleMode());
+		console.log('_waveMode:', _waveMode());
+		console.log('_playlistBox:', _playlistBox());
+		console.log('gTrackBoxHeight:', gTrackBoxHeight);
+		console.log('_playlistCount:', _playlistCount());
+		console.log('gTracks._count:', gTracks._count());
 		console.log('gTracks:', gTracks);
 	});
 
@@ -126,8 +139,7 @@ function _init($) {
 
 		// Берем список треков и ищем среди них трек с нужным id,
 		// попутно сохраняем/обновляем треки в полном списке
-		let $playlistBox = $('.centerblock');
-		let $tracks = $playlistBox.find('.d-track');
+		let $tracks = _playlistBox().find('.d-track');
 		if (debug > 3) console.log('tracks count:', $tracks.length); // debug
 		$tracks.each( function(i) {
 			let $this = $(this);
@@ -154,7 +166,7 @@ function _init($) {
 		}
 
 		// Если трек найден, то позиционируем его в центр экрана,
-		// иначе просто ждем, если не в режиме "волны", или прокручиваем стриницу, если активен режим поиска
+		// иначе просто ждем, если не в режиме "волны", или прокручиваем страницу, если активен режим поиска
 		if ($target) {
 			gFocusId = toId;
 			if (debug) console.log('(->)', toId, $target.find('a.d-track__title').text()?.trim?.()); // info
@@ -169,16 +181,11 @@ function _init($) {
 		} else {
 
 			// Проверяем в каком режиме запущен процесс и надо ли прокручивать страницу для поиска
-			if (!doScroll && !_waveMode()) {
-				// Процесс был запущен в режиме простой фокусировки
-				// Повторный запуск
-				setTimeout(_autoFocus, 100, toId);
-
-			} else if (gLocate) {
+			if (gLocate) {
 				// Проверяем что список треков не пуст и прокручиваем страницу
 				if ($tracks.length) {
 					// Если дошли до низа, то отключаем режим поиска и режим сканирования
-					if ((window.innerHeight + window.pageYOffset) >= $playlistBox.height()) {
+					if ((window.innerHeight + window.pageYOffset) >= _playlistBox().outerHeight()) {
 						gScan = false;
 						$btnL._off();
 					} else {
@@ -188,7 +195,12 @@ function _init($) {
 				}
 
 				// Повторный запуск
-				setTimeout(_autoFocus, 100, toId, doScroll);
+				setTimeout(_autoFocus, 100, toId, 1);
+
+			} else if (!doScroll && !_waveMode()) {
+				// Процесс был запущен в режиме простой фокусировки
+				// Повторный запуск
+				setTimeout(_autoFocus, 100, toId);
 
 			} else {
 				// Процесс был запущен в режиме поиска, но кнопка деактивирована
@@ -213,10 +225,14 @@ function _init($) {
 			let id = _getCurTrackId();
 			if (debug > 1) console.log('onInterval, id:', id, ', cur:', gFocusId); // debug
 			if (id && gFocusId != id) {
-				// Если активен шафл режим, то запустить поиск + сканирование
+				// Если активен шафл режим, то при необходимости запустить поиск + сканирование
 				if (_shuffleMode() && !_waveMode()) {
-					if (!gTracks.length) gScan = true;
-					$btnL.click();
+					if (gTracks._count() < _playlistCount()) {
+						gScan = true;
+						$btnL.click();
+					} else {
+						_autoFocus(id, 1);
+					}
 				} else {
 					_autoFocus(id);
 				}
@@ -232,8 +248,9 @@ function _init($) {
 				gShowListId = id;
 				// запускаем функцию для вызова списка
 				_showPlaylists();
-				// повторный запуск через 1 сек
+				// повторный запуск через 1 и 2 сек
 				setTimeout(_showPlaylists, 1000);
+				setTimeout(_showPlaylists, 2000);
 			}
 		}
 
@@ -245,7 +262,7 @@ function _init($) {
 	// Функция для вызова списка "Добавить в плейлист"
 	function _showPlaylists() {
 		// клик по кнопке вызова, если список не виден
-		if ($('.d-addition__playlists:visible').length == 0)
+		if ($('.d-addition__popup:visible').length == 0)
 			$('.player-controls__track-controls .d-addition__opener').click();
 	}
 }
