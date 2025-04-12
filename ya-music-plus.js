@@ -55,8 +55,10 @@ function _init($) {
 					// обновление списка
 					gTracks[i] = {id:id, top:top, height:gTrackBoxHeight};
 				}
+				return i;
 			}
 		}
+		return NaN;
 	}
 	gTracks._byId = (id) => gTracks.filter((v) => v.id == id); // все треки по id
 	gTracks._firstById = (id) => gTracks._byId(id)?.[0]; // первый из треков по id
@@ -64,34 +66,29 @@ function _init($) {
 
 
 	// Добавляем свои стили
-	$('html').append('<style>.player-controls__btn.is-active {color:#ffcb0d; opacity:1}</style>');
+	$('html').append('<style>.player-controls__btn.is-active {color:#ffcb0d; opacity:1} .d-icon n {font-weight:100; letter-spacing:1.2px}</style>');
 
-	// Контейнер для доп. кнопок управления в проигрывателе
-	let $controlsBox = $('.bar .player-controls__seq-controls');
-
-	// Создаем и интегрируем кнопку режима загрузки списка плейлистов
+	// Создаем кнопку режима загрузки списка плейлистов
 	let $btnP = $('<div class="player-controls__btn deco-player-controls__button" title="Отображать список плейлистов">'
-		+ '<div class="d-icon" style="margin:8px 0;font-size:20px;">L<small style="font-size:.6em;position:relative;left:-5px;top:-4px;">ist</small></div></div>');
-	$controlsBox.prepend($btnP);
+		+ '<div class="d-icon" style="margin:8px 0; font-size:20px;">L'
+		+ '<small style="font-size:.4em; letter-spacing: 2px; position:relative; left:-3px; top:-4px;">ist</small></div></div>');
 	$btnP._pushStatus = () => gShowPlaylists? $btnP.addClass('is-active') : $btnP.removeClass('is-active'); // функция обновления статуса кнопки
 	$btnP._popStatus = () => { gShowPlaylists = $btnP.hasClass('is-active'); return $btnP; }; // функция обновления переменной на основе статуса кнопки
 	$btnP.on('click', () => { $btnP.toggleClass('is-active')._popStatus(); });
 	$btnP._pushStatus();
 
-	// Создаем и интегрируем кнопку режима автопрокрутки списка
+	// Создаем кнопку режима автопрокрутки списка
 	let $btnF = $('<div class="player-controls__btn deco-player-controls__button" title="Автопрокрутка списка">'
-		+ '<div class="d-icon" style="margin:8px 0;font-size:20px;">F<small style="font-size:.4em;position:relative;left:-6px;">ocus</small></div></div>');
-	$controlsBox.prepend($btnF);
+		+ '<div class="d-icon" style="margin:8px 0; font-size:20px;">F<small style="font-size:.4em; position:relative; left:-6px;">ocus</small></div></div>');
 	$btnF._pushStatus = () => gAutoFocus? $btnF.addClass('is-active') : $btnF.removeClass('is-active'); // функция обновления статуса кнопки
 	$btnF._popStatus = () => { gAutoFocus = $btnF.hasClass('is-active'); return $btnF; }; // функция обновления переменной на основе статуса кнопки
 	$btnF.on('click', () => { $btnF.toggleClass('is-active')._popStatus(); });
 	$btnF._pushStatus();
 
-	// Создаем и интегрируем кнопку режима поиска позиции в списке
+	// Создаем кнопку режима поиска позиции в списке
 	let $btnL = $('<div class="player-controls__btn deco-player-controls__button" title="Поиск позиции в списке">'
-		+ '<div class="d-icon" style="margin:8px 0;font-size:9px;">'
-		+ '<span style="display:inline-block;position:relative;top:1px;left:10px;transform:scaleX(2.2);">▲<br>▼</span></div></div>');
-	$controlsBox.prepend($btnL);
+		+ '<div class="d-icon" style="margin:8px 0; font-size:9px;">'
+		+ '<span style="display:inline-block; position:relative; top:1px; left:10px; transform:scaleX(2.2);">▲<br>▼</span></div></div>');
 	$btnL._pushStatus = () => gLocate? $btnL.addClass('is-active') : $btnL.removeClass('is-active'); // функция обновления статуса кнопки
 	$btnL._popStatus = () => { gLocate = $btnL.hasClass('is-active'); return $btnL; }; // функция обновления переменной на основе статуса кнопки
 	$btnL._off = () => $btnL.removeClass('is-active')._popStatus(); // функция выключения кнопки
@@ -106,10 +103,11 @@ function _init($) {
 	});
 	$btnL._pushStatus();
 
-	// Создаем и интегрируем кнопку debug info
+	// Создаем кнопку debug info
 	let $btnD = $('<div class="player-controls__btn deco-player-controls__button" title="Debug Info">'
-		+ '<div class="d-icon" style="margin:8px 0;font-size:20px;">D<small style="font-size:.4em;position:relative;left:-1px;">info</small></div></div>');
-	$controlsBox.prepend($btnD);
+		+ '<div class="d-icon" style="margin:8px 0; font-size:12px; line-height:1.1; text-align:center;"><n class=num></n><br><n class=cnt></n></div></div>');
+	$btnD._num = (text) => $btnD.find('n.num').text(text);
+	$btnD._cnt = (text) => $btnD.find('n.cnt').text(text);
 	$btnD.on('click', () => {
 		console.log('_getCurTrackId:', _getCurTrackId());
 		console.log('_shuffleMode:', _shuffleMode());
@@ -120,6 +118,15 @@ function _init($) {
 		console.log('gTracks._count:', gTracks._count());
 		console.log('gTracks:', gTracks);
 	});
+
+	// Контейнер для доп. кнопок управления в проигрывателе
+	let $controlsBox = $('.bar .player-controls__seq-controls');
+
+	// Интегрируем кнопки в контейнер
+	$controlsBox.prepend($btnP);
+	$controlsBox.prepend($btnF);
+	$controlsBox.prepend($btnL);
+	$controlsBox.prepend($btnD);
 
 
 	// Функция для прокрутки списка на трек с указанным id (фокусировка)
@@ -141,17 +148,27 @@ function _init($) {
 		// попутно сохраняем/обновляем треки в полном списке
 		let $tracks = _playlistBox().find('.d-track');
 		if (debug > 3) console.log('tracks count:', $tracks.length); // debug
+		let idx = NaN;
 		$tracks.each( function(i) {
 			let $this = $(this);
-			// Если трек с искомым id еще не найден и мы не в режиме сканирования, то сверяем id
-			if (!$target && !gScan) {
+			// обновляем полный список
+			idx = gTracks._up($this);
+			if (isNaN(idx)) return; // подождать дозагрузки контента
+			// Если в режиме сканирования то просто обновляем инфо, иначе если трек с искомым id еще не найден, то сверяем id
+			if (gScan) {
+				$btnD._num(idx);
+			} else if (!$target) {
 				if (_getTrackId($this) == toId) {
 					$target = $this;
+					$btnD._num(idx + 1); // сдвигаем на 1, так как индекс идет с 0
 				}
 			}
-			// обновляем полный список
-			gTracks._up($this);
 		});
+		if (isNaN(idx)) {
+			// Повторный запуск для дозагрузки контента
+			setTimeout(_autoFocus, 10, toId, doScroll);
+			return;
+		}
 
 		// Если не нашли и мы не в режиме сканирования, то проверим полный список
 		if (!$target && !gScan) {
@@ -185,12 +202,12 @@ function _init($) {
 				// Проверяем что список треков не пуст и прокручиваем страницу
 				if ($tracks.length) {
 					// Если дошли до низа, то отключаем режим поиска и режим сканирования
-					if ((window.innerHeight + window.pageYOffset) >= _playlistBox().outerHeight()) {
+					if ((window.innerHeight + window.pageYOffset) >= ($('.footer').position()?.top ?? 0)) {
 						gScan = false;
 						$btnL._off();
 					} else {
-						// Прокрутка страницы на высоту экрана
-						window.scrollBy(0, window.screen.height * doScroll);
+						// Прокрутка страницы на две высоты экрана
+						window.scrollBy(0, window.screen.height * 2 * doScroll);
 					}
 				}
 
@@ -217,6 +234,10 @@ function _init($) {
 		_popDebug();
 		// console.log('debug:', debug); // debug
 		if (debug > 5) console.log('gAutoFocus:', gAutoFocus ?? 'undef', 'gLocate:', gLocate ?? 'undef'); // debug
+
+		// Обновляем информации о кол-ве треков на кнопке дебаг инфо
+		if (!gTrackBoxHeight) gTrackBoxHeight = _playlistBox().find('.d-track').outerHeight();
+		$btnD._cnt(_playlistCount());
 
 		// Проверяем что активен режим автопрокрутки и неактивен режим поиска,
 		// затем сверяем текущий сохранненый и реальный id трека и, если они не равны,
@@ -247,7 +268,7 @@ function _init($) {
 			if (id && gShowListId != id) {
 				gShowListId = id;
 				// запускаем функцию для вызова списка
-				_showPlaylists();
+				_showPlaylists(true);
 				// повторный запуск через 1 и 2 сек
 				setTimeout(_showPlaylists, 1000);
 				setTimeout(_showPlaylists, 2000);
@@ -260,9 +281,9 @@ function _init($) {
 
 
 	// Функция для вызова списка "Добавить в плейлист"
-	function _showPlaylists() {
-		// клик по кнопке вызова, если список не виден
-		if ($('.d-addition__popup:visible').length == 0)
+	function _showPlaylists($force = false) {
+		// клик по кнопке вызова, если параметр true или список не виден
+		if ($force || $('.d-addition__popup:visible').length == 0)
 			$('.player-controls__track-controls .d-addition__opener').click();
 	}
 }
