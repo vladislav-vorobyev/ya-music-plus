@@ -47,22 +47,37 @@ function _init($) {
 	gTracks._up = ($track) => { // добавление/обновление трека из DOM объекта
 		let id = _getTrackId($track);
 		if (id) {
-			let top = $track.position()?.top;
+			let top = Math.round( $track.position()?.top );
 			if (top >= 0) {
-				gTrackBoxHeight = $track.outerHeight();
+				// задаем высоту бокса трека, если она еще не заданна, и вычисляем индекс трека
+				let boxHeight = $track.outerHeight();
+				if (!gTrackBoxHeight) gTrackBoxHeight = boxHeight;
 				let i = Math.round(top / gTrackBoxHeight);
 				if (id != gTracks[i]?.id) {
-					// обновление списка
-					gTracks[i] = {id:id, top:top, height:gTrackBoxHeight};
+					// обновление списка и высоты боксов треков
+					gTracks[i] = {id:id, top:top, height:boxHeight};
+					gTrackBoxHeight = gTracks._calcTrackBoxHeight();
 				}
 				return i;
 			}
 		}
 		return NaN;
 	}
+	gTracks._calcTrackBoxHeight = () => { // среднее значение высоты бокса треков
+		// собираем сумму высот и количество непустых значений по списку
+		let height = 0, count = 0;
+		gTracks.forEach( (v) => {
+			if (v?.height) {
+				height += v.height;
+				count++;
+			}
+		});
+		// вычисляем среднее если возможно
+		return count? Math.round( height / count ) : 0;
+	}
 	gTracks._byId = (id) => gTracks.filter((v) => v.id == id); // все треки по id
 	gTracks._firstById = (id) => gTracks._byId(id)?.[0]; // первый из треков по id
-	gTracks._count = () => Object.keys(gTracks).length - 4; // кол-во треков
+	gTracks._count = () => Object.keys(gTracks).length - 5; // кол-во треков
 
 
 	// Добавляем свои стили
@@ -109,11 +124,19 @@ function _init($) {
 	$btnD._num = (text) => $btnD.find('n.num').text(text);
 	$btnD._cnt = (text) => $btnD.find('n.cnt').text(text);
 	$btnD.on('click', () => {
+		console.log('debug:', debug);
+		console.log('gFocusId:', gFocusId);
+		console.log('gAutoFocus:', gAutoFocus);
+		console.log('gLocate:', gLocate);
+		console.log('gScan:', gScan);
+		console.log('gDoingFocus:', gDoingFocus);
+		console.log('gShowListId:', gShowListId);
+		console.log('gShowPlaylists:', gShowPlaylists);
+		console.log('gTrackBoxHeight:', gTrackBoxHeight);
 		console.log('_getCurTrackId:', _getCurTrackId());
 		console.log('_shuffleMode:', _shuffleMode());
 		console.log('_waveMode:', _waveMode());
 		console.log('_playlistBox:', _playlistBox());
-		console.log('gTrackBoxHeight:', gTrackBoxHeight);
 		console.log('_playlistCount:', _playlistCount());
 		console.log('gTracks._count:', gTracks._count());
 		console.log('gTracks:', gTracks);
@@ -216,8 +239,9 @@ function _init($) {
 
 			} else if (!doScroll && !_waveMode()) {
 				// Процесс был запущен в режиме простой фокусировки
-				// Повторный запуск
-				setTimeout(_autoFocus, 100, toId);
+				// Уточняем текущий id и запускаем повторно
+				if (toId = _getCurTrackId())
+					setTimeout(_autoFocus, 100, toId);
 
 			} else {
 				// Процесс был запущен в режиме поиска, но кнопка деактивирована
